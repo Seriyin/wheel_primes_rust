@@ -5,10 +5,9 @@ pub fn isqrt(n: usize) -> usize {
     // cₙ
     let mut c = 0;
 
-
     // dₙ which starts at the highest power of four <= n
-    let mut d = 1 << usize::BITS - 2; // The second-to-top bit is set.
-                            // Same as ((unsigned) INT32_MAX + 1) / 2.
+    let mut d = 1 << (usize::BITS - 2); // The second-to-top bit is set.
+                            // Same as ((unsigned) usize::MAX + 1) / 2.
     while d > n {
         d >>= 2;
     }
@@ -24,7 +23,7 @@ pub fn isqrt(n: usize) -> usize {
         }
         d >>= 2;               // dₘ₋₁ = dₘ/4
     }
-    return c.try_into().unwrap();                  // c₋₁
+    return c;                  // c₋₁
 
 }
 
