@@ -1,0 +1,38 @@
+[package]
+name = "prime_sieves-fuzz"
+version = "0.1.0"
+authors = ["Automatically generated"]
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = { version = "0.4", features = ["arbitrary-derive"] }
+primal-sieve = "0.3"
+
+[dependencies.prime-sieves]
+path = "../prime-sieves"
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[lib]
+name = "types"
+path = "lib/types.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_target_1"
+path = "fuzz_targets/fuzz_target_1.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_target_2"
+path = "fuzz_targets/fuzz_target_2.rs"
+test = false
+doc = false
