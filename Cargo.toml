@@ -1,2 +1,2 @@
 [workspace]
-members = ["prime-sieves", "test-utils"]
+members = ["prime-scripts","prime-sieves", "test-utils"]
