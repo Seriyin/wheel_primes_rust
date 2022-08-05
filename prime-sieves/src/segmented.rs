@@ -9,7 +9,7 @@ use crate::utils::isqrt;
 const L1D_CACHE_SIZE: usize = 32768;
 
 #[derive(Debug)]
-struct SieveSegmented {
+pub struct SieveSegmented {
     primes: usize,
     sqrt: usize,
     count: usize,
@@ -17,7 +17,7 @@ struct SieveSegmented {
     is_prime: Vec<bool>,
     primes_vec: Vec<usize>,
     multiples: Vec<usize>,
-    primes_result: Vec<usize>
+    pub primes_result: Vec<usize>
 }
 
 impl SieveSegmented {
@@ -160,7 +160,7 @@ pub fn sieve_segmented_w(primes: usize) -> JsValue {
     JsValue::from_serde(&sieve_segmented.primes_result).unwrap()
 }
 
-fn sieve_segmented(primes: usize) -> SieveSegmented {
+pub fn sieve_segmented(primes: usize) -> SieveSegmented {
     match primes {
         0 | 1 => SieveSegmented::empty(),
         2 => SieveSegmented::single(),
@@ -180,7 +180,7 @@ pub fn n_primes_segmented_w(primes: usize) -> JsValue {
     JsValue::from_serde(&sieve_segmented.primes_result).unwrap()
 }
 
-fn n_primes_segmented(primes: usize) -> SieveSegmented {
+pub fn n_primes_segmented(primes: usize) -> SieveSegmented {
     match primes {
         0 => SieveSegmented::empty(),
         1 => SieveSegmented::single(),
@@ -198,54 +198,31 @@ fn n_primes_segmented(primes: usize) -> SieveSegmented {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::File;
-    use serde::{Serialize, Deserialize};
-    use once_cell::sync::Lazy;
+    use primal_sieve::Sieve;
 
-    #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
-    struct GenericArray<const N: usize> {
-        #[serde(with = "serde_arrays")]
-        arr: [usize; N],
-    }
 
-    static PRIMES_2000: Lazy<[usize; 303]> = Lazy::new(|| {
-        let arr: GenericArray<303> =
-            bincode::deserialize_from(
-                std::io::BufReader::new(
-                    File::open("./primes2000.bin").unwrap()
-                )
-            ).unwrap();
-        arr.arr
-    });
+    use test_utils::assert_primes;
 
     #[test]
     fn segmented_fact_by_limit() {
         use super::sieve_segmented;
 
-        let primes: &[usize] = &*PRIMES_2000;
-        
-        let result = sieve_segmented(5);
+        let primes: Sieve = Sieve::new(2000);
 
-        assert_eq!(*result.primes_result.as_slice(), primes[..=5]);
 
-        let result = sieve_segmented(2000);
-
-        assert_eq!(*result.primes_result.as_slice(), primes[..]);
+        assert_primes(5, &primes, |n| sieve_segmented(n).primes_result);
+        assert_primes(2000, &primes, |n| sieve_segmented(n).primes_result);
     }
+
+    use test_utils::assert_n;
 
     #[test]
     fn segmented_fact_by_n() {
         use super::n_primes_segmented;
 
-        let primes: &[usize] = &*PRIMES_2000;
+        let primes: Sieve = Sieve::new(2000);
 
-        let result = n_primes_segmented(3);
-        assert_eq!(*result.primes_result.as_slice(), primes[..3]);
-
-        let result = n_primes_segmented(7);
-        assert_eq!(*result.primes_result.as_slice(), primes[..7]);
-
-        let result = n_primes_segmented(303);
-        assert_eq!(*result.primes_result.as_slice(), primes[..]);
+        assert_n(3, &primes, |n| n_primes_segmented(n).primes_result);
+        assert_n(303, &primes, |n| n_primes_segmented(n).primes_result);
     }
 }

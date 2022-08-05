@@ -8,7 +8,7 @@ pub fn sieve_pritchard_w(primes: usize) -> JsValue {
     JsValue::from_serde(&sieve_pritchard(primes)).unwrap()
 }
 
-fn sieve_pritchard(primes: usize) -> Vec<usize> {
+pub fn sieve_pritchard(primes: usize) -> Vec<usize> {
     let mut start_primes: Vec<usize> = vec![2, 3];
     match primes {
         0 | 1 => {
@@ -49,7 +49,7 @@ pub fn n_primes_pritchard_w(primes: usize) -> JsValue {
     JsValue::from_serde(&n_primes_pritchard(primes)).unwrap()
 }
 
-fn n_primes_pritchard(n: usize) -> Vec<usize> {
+pub fn n_primes_pritchard(n: usize) -> Vec<usize> {
     let approx = approximate_primes(n);
 
     let mut primes_accum = sieve_pritchard(approx);
@@ -82,47 +82,33 @@ fn union(prk: &mut Vec<usize>, wheel: &Vec<usize>) {
 
 #[cfg(test)]
 mod tests {
-    use once_cell::sync::Lazy;
-    use serde::{Deserialize, Serialize};
-    use std::fs::File;
+    use primal_sieve::Sieve;
 
-    #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
-    struct GenericArray<const N: usize> {
-        #[serde(with = "serde_arrays")]
-        arr: [usize; N],
-    }
 
-    static PRIMES_2000: Lazy<[usize; 303]> = Lazy::new(|| {
-        let arr: GenericArray<303> = bincode::deserialize_from(std::io::BufReader::new(
-            File::open("./primes2000.bin").unwrap(),
-        ))
-        .unwrap();
-        arr.arr
-    });
+    use test_utils::assert_primes;
 
     #[test]
     fn wheel_fact_by_limit() {
         use super::sieve_pritchard;
 
-        let primes: &[usize] = &*PRIMES_2000;
+        let primes: Sieve = Sieve::new(2000);
 
-        let result = sieve_pritchard(5);
-        assert_eq!(*result.as_slice(), primes[0..3]);
 
-        let result = sieve_pritchard(2000);
-        assert_eq!(*result.as_slice(), primes[..]);
+        assert_primes(5, &primes, sieve_pritchard);
+        assert_primes(2000, &primes, sieve_pritchard);
     }
+
+
+    use test_utils::assert_n;
 
     #[test]
     fn wheel_fact_by_n() {
         use super::n_primes_pritchard;
 
-        let primes: &[usize] = &*PRIMES_2000;
+        let primes: Sieve = Sieve::new(2000);
 
-        let result = n_primes_pritchard(3);
-        assert_eq!(*result.as_slice(), primes[0..3]);
-
-        let result = n_primes_pritchard(303);
-        assert_eq!(*result.as_slice(), primes[..]);
+        assert_n(3, &primes, n_primes_pritchard);
+        assert_n(303, &primes, n_primes_pritchard);
     }
+
 }
