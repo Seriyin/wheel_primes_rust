@@ -1,3 +1,4 @@
+use bitvec::prelude::{BitSlice, bitvec};
 use wasm_bindgen::prelude::*;
 use std::cmp::min;
 use std::cmp::max;
@@ -6,7 +7,7 @@ use crate::utils::approximate_primes;
 use crate::utils::isqrt;
 
 
-const L1D_CACHE_SIZE: usize = 32768;
+const L1D_CACHE_SIZE: usize = 32768 * 8 * 2;
 
 #[derive(Debug)]
 pub struct SieveSegmented {
@@ -78,10 +79,9 @@ impl SieveSegmented {
     }
 
     fn calculate_primes_for_segment(
-        &mut self, low: usize, mut i: usize, mut n: usize, mut s: usize, 
-        sieve_segment: &mut Vec<bool>
-    ) -> (usize, usize, usize) {
-        sieve_segment.fill(true);
+        &mut self, low: usize, mut i: usize, mut s: usize, 
+        sieve_segment: &mut BitSlice
+    ) -> (usize, usize) {
     
         // current segment = [low, high]
         let high = min(low + self.segment_size - 1, self.primes);
@@ -113,39 +113,45 @@ impl SieveSegmented {
             let mut j: usize = self.multiples[i];
             let k = self.primes_vec[i] * 2;
             while j < self.segment_size {
-                sieve_segment[j] = false;
+                if j % 2 == 1 {
+                    sieve_segment.set(j / 2, false)  
+                };
                 j += k;
             }
             self.multiples[i] = j - self.segment_size;
         }
 
-        while n <= high {
-            if sieve_segment[n - low] {
-                self.primes_result.push(n);
+        let diff = (high - low - 1) / 2;
+        sieve_segment[..=diff].iter_ones().for_each(
+            |i| {
+                self.primes_result.push(low + i * 2 + 1);
                 self.count += 1;
-            } // n is a prime
-            n += 2
-        }
+            }
+        );
 
-        return (i, n, s)
+        sieve_segment.fill(true);
+
+        return (i, s)
 
     
     }
 
     fn sieve_segmented_loop(&mut self) {
-        let mut sieve_segment = vec!(true; self.segment_size);
+        let mut sieve_segment = bitvec!(1; 1).repeat(self.segment_size).into_boxed_bitslice();
+
         self.primes_result.push(2);
         self.count = 1;
 
         let mut i = 3;
-        let mut n = 3;
         let mut s = 3;
     
         let mut low: usize = 0;
+
+        sieve_segment.set(0, false);
     
     
-        while low <= self.primes {
-            (i, n, s) = self.calculate_primes_for_segment(low, i, n, s, &mut sieve_segment);
+        while low < self.primes {
+            (i, s) = self.calculate_primes_for_segment(low, i, s, sieve_segment.as_mut_bitslice());
     
             low += self.segment_size;
         }
@@ -167,7 +173,24 @@ pub fn sieve_segmented(primes: usize) -> SieveSegmented {
         _ => {
             let mut sieve_segmented = SieveSegmented::new(primes);
             sieve_segmented.sieve_segmented_loop();
-            sieve_segmented    
+/* Circumvents non-primes or primes within segment bigger than primes.
+            let pop_cnt = {
+                let primes_result = &sieve_segmented.primes_result;
+                let lngth = primes_result.len();
+                let mut i = 0;
+                while lngth - 1 - i > 0 && primes_result[lngth - 1 - i] > primes {
+                    i += 1
+                };
+                i
+            };
+            {
+                for _i in 0..pop_cnt {
+                    let primes_result = &mut sieve_segmented.primes_result;
+                    primes_result.pop();
+                }    
+            }
+*/
+            sieve_segmented
         }
     }
 }
@@ -202,16 +225,19 @@ mod tests {
 
 
     use test_utils::assert_primes;
+//    use test_utils::dump;
 
     #[test]
     fn segmented_fact_by_limit() {
         use super::sieve_segmented;
 
-        let primes: Sieve = Sieve::new(2000);
 
-
-        assert_primes(5, &primes, |n| sieve_segmented(n).primes_result);
-        assert_primes(2000, &primes, |n| sieve_segmented(n).primes_result);
+        let primes_test = [5, 2000, 16777216];
+        let primes: Sieve = Sieve::new(*primes_test.iter().max().unwrap());
+        for i in primes_test {
+            assert_primes(i, &primes, |n| sieve_segmented(n).primes_result);
+        }
+//        dump(&Sieve::new(15179958), sieve_segmented(15179958).primes_result);
     }
 
     use test_utils::assert_n;

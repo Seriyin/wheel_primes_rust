@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 serde =  { version = "1", features = ["derive"] }
+bitvec = { version = "1", default-features = false, features = ["alloc", "std"] }
 
 [dev-dependencies]
 primal-sieve = "0.3"
