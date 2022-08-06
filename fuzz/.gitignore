@@ -2,3 +2,4 @@
 /corpus
 /artifacts
 *.code-workspace
+/Cargo.lock
