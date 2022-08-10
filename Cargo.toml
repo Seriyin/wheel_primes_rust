@@ -1,2 +1,6 @@
 [workspace]
 members = ["prime-scripts","prime-sieves", "test-utils"]
+
+[profile.release]
+lto = "fat"
+debug = true

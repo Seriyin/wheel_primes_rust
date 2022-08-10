@@ -28,7 +28,7 @@ fn main() -> Result<(), Error> {
         };
     }
 
-    return Ok(());
+    Ok(())
 }
 
 pub fn process_file(e: &DirEntry, reg: &Regex) -> Result<(), Error> {
