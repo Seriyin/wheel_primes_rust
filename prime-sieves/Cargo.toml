@@ -10,7 +10,21 @@ bitvec = { version = "1", default-features = false, features = ["alloc", "std"] 
 
 [dev-dependencies]
 primal-sieve = "0.3"
+criterion = "0.3"
+rand = "0.8"
 test-utils = { path = "../test-utils" }
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+
+[[bench]]
+name = "sieve_giant"
+harness = false
+
+[[bench]]
+name = "sieve_big"
+harness = false
+
+[[bench]]
+name = "sieve_small"
+harness = false
