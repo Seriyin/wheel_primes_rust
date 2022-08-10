@@ -1,4 +1,5 @@
-use bitvec::prelude::{BitSlice, bitvec};
+use bitvec::prelude::{BitSlice};
+use bitvec::vec::BitVec;
 use wasm_bindgen::prelude::*;
 use std::cmp::min;
 use std::cmp::max;
@@ -7,6 +8,8 @@ use crate::utils::approximate_primes;
 use crate::utils::isqrt;
 
 
+//Approximate size of L1 Cache in bits x2 because
+//even numbers are not stored.
 const L1D_CACHE_SIZE: usize = 32768 * 8 * 2;
 
 #[derive(Debug)]
@@ -51,7 +54,7 @@ impl SieveSegmented {
     fn new_n(n: usize) -> SieveSegmented {
         let primes = approximate_primes(n);
         let sqrt: usize = isqrt(primes);
-        return SieveSegmented { 
+        SieveSegmented { 
             primes,
             sqrt,
             count: 0,
@@ -65,7 +68,7 @@ impl SieveSegmented {
 
     fn new(primes: usize) -> SieveSegmented {
         let sqrt: usize = isqrt(primes);
-        return SieveSegmented {
+        SieveSegmented {
             primes,
             sqrt,
             count: 0,
@@ -114,8 +117,12 @@ impl SieveSegmented {
             let k = self.primes_vec[i] * 2;
             while j < self.segment_size {
                 if j % 2 == 1 {
-                    sieve_segment.set(j / 2, false)  
-                };
+                    //replace unchecked is perfectly fine due to bounds [0, self.segment_size] being perfectly defined a priori.
+                    //j is always smaller than self.segment_size as per while condition.
+                    unsafe {
+                        sieve_segment.replace_unchecked(j / 2, false)  
+                    };
+                }
                 j += k;
             }
             self.multiples[i] = j - self.segment_size;
@@ -131,13 +138,15 @@ impl SieveSegmented {
 
         sieve_segment.fill(true);
 
-        return (i, s)
+        (i, s)
 
     
     }
 
     fn sieve_segmented_loop(&mut self) {
-        let mut sieve_segment = bitvec!(1; 1).repeat(self.segment_size).into_boxed_bitslice();
+        let vec = vec![usize::MAX; self.segment_size / (usize::BITS as usize)];
+        let mut sieve_segment = BitVec::from_vec(vec).into_boxed_bitslice();
+        assert_eq!(sieve_segment.len(), self.segment_size);
 
         self.primes_result.push(2);
         self.count = 1;
@@ -147,7 +156,10 @@ impl SieveSegmented {
     
         let mut low: usize = 0;
 
-        sieve_segment.set(0, false);
+        //replace unchecked is perfectly fine due to bounds [0, self.segment_size] being perfectly defined a priori.
+        unsafe {
+            sieve_segment.replace_unchecked(0, false);
+        }
     
     
         while low < self.primes {
@@ -173,7 +185,8 @@ pub fn sieve_segmented(primes: usize) -> SieveSegmented {
         _ => {
             let mut sieve_segmented = SieveSegmented::new(primes);
             sieve_segmented.sieve_segmented_loop();
-/* Circumvents non-primes or primes within segment bigger than primes.
+            //Circumvents non-primes or primes within segment bigger than primes.
+            /* 
             let pop_cnt = {
                 let primes_result = &sieve_segmented.primes_result;
                 let lngth = primes_result.len();
@@ -189,7 +202,7 @@ pub fn sieve_segmented(primes: usize) -> SieveSegmented {
                     primes_result.pop();
                 }    
             }
-*/
+            */
             sieve_segmented
         }
     }
