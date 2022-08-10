@@ -74,7 +74,7 @@ fn delete(wheel: &mut Vec<usize>, p: usize) {
     wheel.retain(|w| w % p != 0);
 }
 
-fn union(prk: &mut Vec<usize>, wheel: &Vec<usize>) {
+fn union(prk: &mut Vec<usize>, wheel: &[usize]) {
     for i in &wheel[1..] {
         prk.push(*i);
     }

@@ -23,7 +23,7 @@ pub fn isqrt(n: usize) -> usize {
         }
         d >>= 2;               // dₘ₋₁ = dₘ/4
     }
-    return c;                  // c₋₁
+    c                  // c₋₁
 
 }
 
